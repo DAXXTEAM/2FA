@@ -1,24 +1,42 @@
 {
-  "name": "Telegram 2FA Bot",
-  "description": "A simple Telegram bot for 2FA verification.",
+  "name": "2FA Manager Bot",
+  "description": "A Telegram bot for generating TOTP 2FA codes securely.",
   "repository": "https://github.com/DAXXTEAM/2FA",
-  "logo": "https://avatars.githubusercontent.com/u/9919",
-  "keywords": ["telegram", "bot", "2fa", "security"],
+  "logo": "https://img.icons8.com/color/512/two-factor-authentication.png",
+  "keywords": [
+    "telegram",
+    "bot",
+    "2fa",
+    "totp",
+    "security",
+    "authenticator",
+    "python",
+    "pyrogram"
+  ],
+  "stack": "heroku-22",
   "buildpacks": [
-    { "url": "heroku/python" }
+    {
+      "url": "heroku/python"
+    }
   ],
   "env": {
     "API_ID": {
-      "description": "Your Telegram API ID",
+      "description": "Your Telegram API ID (get from my.telegram.org)",
       "required": true
     },
     "API_HASH": {
-      "description": "Your Telegram API Hash",
+      "description": "Your Telegram API Hash (get from my.telegram.org)",
       "required": true
     },
     "BOT_TOKEN": {
-      "description": "Your Telegram bot token",
+      "description": "Your Telegram Bot Token (get from @BotFather)",
       "required": true
+    }
+  },
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "eco"
     }
   }
 }
