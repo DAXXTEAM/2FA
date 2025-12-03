@@ -6,21 +6,26 @@ import re
 from time import time
 from typing import Dict, Tuple
 
-# Configuration from Environment Variables
-API_ID = int(os.getenv("API_ID", "24509589"))
-API_HASH = os.getenv("API_HASH", "717cf21d94c4934bcbe1eaa1ad86ae75")
-BOT_TOKEN = os.getenv("BOT_TOKEN", "8148561075:AAHWEUHbbcWCyTtwLFYGEY5FMr8wxE4b5c4")
+# Configuration from Environment Variables (NO DEFAULTS - SECURITY BEST PRACTICE)
+API_ID = os.getenv("API_ID")
+API_HASH = os.getenv("API_HASH")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 # Ensure credentials are set
 if not all([API_ID, API_HASH, BOT_TOKEN]):
     raise ValueError("API_ID, API_HASH, and BOT_TOKEN must be set in environment variables.")
 
-# Initialize Bot
-bot = Client("2FA_Bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
-BUTTON_COOLDOWN = 30  # seconds
+# Convert API_ID to integer
+try:
+    API_ID = int(API_ID)
+except ValueError:
+    raise ValueError("API_ID must be a valid integer.")
 
-# Initialize the client
-app = Client("adv_2fa_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+# Initialize the client (single instance)
+app = Client("2fa_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+
+# Constants
+BUTTON_COOLDOWN = 30  # seconds
 
 # Storage
 user_2fa_keys = {}
@@ -105,12 +110,18 @@ async def ask_2fa_key(client: Client, callback: CallbackQuery):
     )
     user_2fa_keys[user_id] = None
 
-@app.on_message(filters.private & filters.text)
+@app.on_message(filters.private & filters.text & ~filters.command(["start"]))
 async def handle_2fa_key(client: Client, message: Message):
     """Handle the user's 2FA key submission."""
     user_id = message.from_user.id
+    
+    # Check if user is in the flow
     if user_id not in user_2fa_keys:
         await message.reply_text("❌ Please restart using /start.", reply_markup=get_start_keyboard())
+        return
+    
+    # If user already has a key stored, ignore
+    if user_2fa_keys[user_id] is not None:
         return
 
     key = message.text.strip().replace(" ", "").upper()
@@ -126,54 +137,93 @@ async def handle_2fa_key(client: Client, message: Message):
         return
 
     try:
+        # Test if the key is valid by generating a code
         pyotp.TOTP(key).now()
         user_2fa_keys[user_id] = key
+        
+        # Delete the message containing the key for security
+        try:
+            await message.delete()
+        except Exception:
+            pass
+        
         await message.reply_text(
             "✅ **2FA Key Saved!**\n\n"
-            "🎉 You can now generate TOTP codes using the button below.",
+            "🎉 You can now generate TOTP codes using the button below.\n"
+            "🔒 Your message has been deleted for security.",
             reply_markup=get_totp_keyboard()
         )
-    except Exception:
-        await message.reply_text("❌ Error saving your key. Please try again.")
+    except Exception as e:
+        await message.reply_text(
+            "❌ **Error saving your key!**\n\n"
+            "The key format appears correct but failed validation.\n"
+            "Please check your key and try again."
+        )
 
 @app.on_callback_query(filters.regex("get_totp"))
 async def generate_totp(client: Client, callback: CallbackQuery):
     """Generate a TOTP code for the user."""
     user_id = callback.from_user.id
+    
+    # Check cooldown
     if is_button_locked(user_id, "get_totp"):
         remaining = get_remaining_time(user_id, "get_totp")
         await callback.answer(f"⏳ Wait {remaining} seconds.", show_alert=True)
         return
 
+    # Check if key exists
     if user_id not in user_2fa_keys or not user_2fa_keys[user_id]:
-        await callback.message.edit_text("❌ No key found! Please enter your key first.", reply_markup=get_start_keyboard())
+        await callback.message.edit_text(
+            "❌ No key found! Please enter your key first.", 
+            reply_markup=get_start_keyboard()
+        )
         return
 
     lock_button(user_id, "get_totp")
+    
     try:
         totp = pyotp.TOTP(user_2fa_keys[user_id])
         code = totp.now()
+        
+        # Calculate time remaining for this code
+        remaining_time = 30 - (int(time()) % 30)
+        
         await callback.message.edit_text(
             f"🔐 **Your Current TOTP Code:**\n\n"
             f"✨ `{code}` ✨\n\n"
+            f"⏱ Valid for: **{remaining_time} seconds**\n\n"
             "⚡ _Generate a new code anytime!_",
             reply_markup=get_totp_keyboard()
         )
-    except Exception:
-        await callback.message.edit_text("❌ Error generating your TOTP code.")
+        await callback.answer("✅ Code generated successfully!", show_alert=False)
+    except Exception as e:
+        await callback.message.edit_text(
+            "❌ **Error generating your TOTP code!**\n\n"
+            "Please try entering your key again.",
+            reply_markup=get_start_keyboard()
+        )
 
 @app.on_callback_query(filters.regex("about_bot"))
 async def about_bot(client: Client, callback: CallbackQuery):
     """Show information about the bot."""
     await callback.message.edit_text(
         "🤖 **About This Bot**:\n\n"
-        "🔒 Manage your 2FA keys and generate secure TOTP codes with ease.\n"
-        "🎨 Designed with animations and enhanced features for a seamless experience.\n\n"
-        "💡 _Built using Pyrogram._",
+        "🔒 Securely manage your 2FA keys and generate TOTP codes instantly.\n"
+        "🎨 Designed with enhanced security features:\n"
+        "   • Auto-delete sensitive messages\n"
+        "   • Button cooldown protection\n"
+        "   • Valid Base32 key verification\n"
+        "   • Time-remaining countdown\n\n"
+        "💡 _Built with Pyrogram & PyOTP_\n"
+        "⚠️ _Your keys are stored in memory only (not persistent)_",
         reply_markup=get_start_keyboard()
     )
+    await callback.answer()
 
 if __name__ == "__main__":
-    print("🚀  2FA Bot is now running...")
+    print("🚀 2FA Bot is starting...")
+    print(f"📋 Bot Name: 2fa_bot")
+    print(f"🔐 Security: Keys stored in memory only")
+    print(f"⏱️ Button Cooldown: {BUTTON_COOLDOWN} seconds")
+    print("✅ Bot is now running...")
     app.run()
-    
