@@ -7,16 +7,19 @@ from time import time
 from typing import Dict, Tuple
 
 # Configuration from Environment Variables
-API_ID = int(os.getenv("API_ID", "24509589"))
-API_HASH = os.getenv("API_HASH", "717cf21d94c4934bcbe1eaa1ad86ae75")
-BOT_TOKEN = os.getenv("BOT_TOKEN", "8148561075:AAHWEUHbbcWCyTtwLFYGEY5FMr8wxE4b5c4")
+API_ID = os.getenv("API_ID")
+API_HASH = os.getenv("API_HASH")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 # Ensure credentials are set
 if not all([API_ID, API_HASH, BOT_TOKEN]):
     raise ValueError("API_ID, API_HASH, and BOT_TOKEN must be set in environment variables.")
 
-# Initialize Bot
-bot = Client("2FA_Bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+try:
+    API_ID = int(API_ID)
+except (ValueError, TypeError):
+    raise ValueError("API_ID must be a valid integer.")
+
 BUTTON_COOLDOWN = 30  # seconds
 
 # Initialize the client
@@ -97,6 +100,7 @@ async def ask_2fa_key(client: Client, callback: CallbackQuery):
         return
 
     lock_button(user_id, "enter_2fa")
+    await callback.answer()
     await callback.message.edit_text(
         "📝 **Enter Your 2FA Key:**\n\n"
         "➡️ The key must be a valid Base32 string.\n"
@@ -150,6 +154,7 @@ async def generate_totp(client: Client, callback: CallbackQuery):
         return
 
     lock_button(user_id, "get_totp")
+    await callback.answer()
     try:
         totp = pyotp.TOTP(user_2fa_keys[user_id])
         code = totp.now()
@@ -165,6 +170,7 @@ async def generate_totp(client: Client, callback: CallbackQuery):
 @app.on_callback_query(filters.regex("about_bot"))
 async def about_bot(client: Client, callback: CallbackQuery):
     """Show information about the bot."""
+    await callback.answer()
     await callback.message.edit_text(
         "🤖 **About This Bot**:\n\n"
         "🔒 Manage your 2FA keys and generate secure TOTP codes with ease.\n"
