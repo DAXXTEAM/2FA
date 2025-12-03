@@ -1,24 +1,45 @@
 {
   "name": "Telegram 2FA Bot",
-  "description": "A simple Telegram bot for 2FA verification.",
+  "description": "A secure Telegram bot for managing 2FA keys and generating TOTP codes. Features anti-spam protection, session-based storage, and automatic message deletion for security.",
   "repository": "https://github.com/DAXXTEAM/2FA",
   "logo": "https://avatars.githubusercontent.com/u/9919",
-  "keywords": ["telegram", "bot", "2fa", "security"],
-  "buildpacks": [
-    { "url": "heroku/python" }
+  "keywords": [
+    "telegram",
+    "bot",
+    "2fa",
+    "totp",
+    "security",
+    "authentication",
+    "otp",
+    "pyrogram"
   ],
+  "success_url": "/",
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  },
   "env": {
     "API_ID": {
-      "description": "Your Telegram API ID",
-      "required": true
+      "description": "Your Telegram API ID (get it from https://my.telegram.org/apps). Must be a numeric value.",
+      "required": true,
+      "value": ""
     },
     "API_HASH": {
-      "description": "Your Telegram API Hash",
-      "required": true
+      "description": "Your Telegram API Hash (get it from https://my.telegram.org/apps). Should be a 32-character hexadecimal string.",
+      "required": true,
+      "value": ""
     },
     "BOT_TOKEN": {
-      "description": "Your Telegram bot token",
-      "required": true
+      "description": "Your Telegram Bot Token (get it from @BotFather). Format: 1234567890:ABCdefGHIjklMNOpqrSTUvwxYZ",
+      "required": true,
+      "value": ""
     }
   }
 }

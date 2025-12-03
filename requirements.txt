@@ -1,2 +1,6 @@
-pyrogram
-pyotp
+# Telegram Bot Framework
+pyrogram==2.0.106
+tgcrypto==1.2.5
+
+# TOTP/2FA Library
+pyotp==2.9.0
