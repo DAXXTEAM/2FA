@@ -7,16 +7,19 @@ from time import time
 from typing import Dict, Tuple
 
 # Configuration from Environment Variables
-API_ID = int(os.getenv("API_ID", "24509589"))
-API_HASH = os.getenv("API_HASH", "717cf21d94c4934bcbe1eaa1ad86ae75")
-BOT_TOKEN = os.getenv("BOT_TOKEN", "8148561075:AAHWEUHbbcWCyTtwLFYGEY5FMr8wxE4b5c4")
+API_ID = os.getenv("API_ID")
+API_HASH = os.getenv("API_HASH")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 # Ensure credentials are set
 if not all([API_ID, API_HASH, BOT_TOKEN]):
     raise ValueError("API_ID, API_HASH, and BOT_TOKEN must be set in environment variables.")
 
-# Initialize Bot
-bot = Client("2FA_Bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+try:
+    API_ID = int(API_ID)
+except (ValueError, TypeError):
+    raise ValueError("API_ID must be a valid integer.")
+
 BUTTON_COOLDOWN = 30  # seconds
 
 # Initialize the client
@@ -109,8 +112,9 @@ async def ask_2fa_key(client: Client, callback: CallbackQuery):
 async def handle_2fa_key(client: Client, message: Message):
     """Handle the user's 2FA key submission."""
     user_id = message.from_user.id
-    if user_id not in user_2fa_keys:
-        await message.reply_text("❌ Please restart using /start.", reply_markup=get_start_keyboard())
+    
+    # Only process if user is in the flow (has None entry from enter_2fa callback)
+    if user_id not in user_2fa_keys or user_2fa_keys[user_id] is not None:
         return
 
     key = message.text.strip().replace(" ", "").upper()
@@ -121,20 +125,27 @@ async def handle_2fa_key(client: Client, message: Message):
             "Make sure your key follows the Base32 format:\n"
             "• Only A-Z, 2-7 are allowed\n"
             "• No special characters or spaces\n\n"
-            "ℹ️ Try again or use /start to reset."
+            "ℹ️ Try again or use /start to reset.",
+            reply_markup=get_start_keyboard()
         )
         return
 
     try:
-        pyotp.TOTP(key).now()
+        # Validate the key by generating a TOTP code
+        totp = pyotp.TOTP(key)
+        totp.now()  # Test if key is valid
         user_2fa_keys[user_id] = key
         await message.reply_text(
             "✅ **2FA Key Saved!**\n\n"
             "🎉 You can now generate TOTP codes using the button below.",
             reply_markup=get_totp_keyboard()
         )
-    except Exception:
-        await message.reply_text("❌ Error saving your key. Please try again.")
+    except Exception as e:
+        await message.reply_text(
+            f"❌ Error saving your key: {str(e)}\n\n"
+            "Please check your key and try again.",
+            reply_markup=get_start_keyboard()
+        )
 
 @app.on_callback_query(filters.regex("get_totp"))
 async def generate_totp(client: Client, callback: CallbackQuery):
@@ -159,8 +170,14 @@ async def generate_totp(client: Client, callback: CallbackQuery):
             "⚡ _Generate a new code anytime!_",
             reply_markup=get_totp_keyboard()
         )
-    except Exception:
-        await callback.message.edit_text("❌ Error generating your TOTP code.")
+        await callback.answer("✅ TOTP code generated!", show_alert=False)
+    except Exception as e:
+        await callback.message.edit_text(
+            f"❌ Error generating your TOTP code: {str(e)}\n\n"
+            "Please re-enter your 2FA key.",
+            reply_markup=get_start_keyboard()
+        )
+        await callback.answer("❌ Failed to generate code", show_alert=True)
 
 @app.on_callback_query(filters.regex("about_bot"))
 async def about_bot(client: Client, callback: CallbackQuery):
@@ -174,6 +191,6 @@ async def about_bot(client: Client, callback: CallbackQuery):
     )
 
 if __name__ == "__main__":
-    print("🚀  2FA Bot is now running...")
+    print("🚀 2FA Bot is now running...")
+    print("✅ Bot initialized successfully!")
     app.run()
-    
