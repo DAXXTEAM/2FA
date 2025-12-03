@@ -1,72 +1,103 @@
-# 2FA Verification Bot
+# 🔐 2FA Manager Bot
 
-A **Telegram 2FA verification bot** that helps users secure their accounts with two-factor authentication. This bot supports deployment on **VPS** and **Heroku**.
+A **Telegram 2FA Bot** that helps users manage their two-factor authentication keys and generate TOTP codes. Supports deployment on **VPS** and **Heroku**.
 
-## Features
-- Secure **2FA authentication** via Telegram
-- Supports **VPS & Heroku** deployment
-- Easy setup and configuration
-- Open-source and customizable
+## ✨ Features
+
+- 🔑 **Multiple Keys** - Store and manage multiple 2FA keys
+- ⏱️ **Visual Timer** - See countdown until code expires
+- 🗑️ **Key Management** - Add, view, and delete keys easily
+- 🛡️ **Anti-Spam** - Built-in cooldown protection
+- 📱 **User-Friendly** - Interactive buttons and menus
 
 ---
 
 ## 🚀 Deployment Guide
 
 ### 1️⃣ Deploy on Heroku
-#### **Step 1:** Click the Button Below
-    ─「 ᴅᴇᴩʟᴏʏ ᴏɴ ʜᴇʀᴏᴋᴜ 」─
-</h3>
 
-<p align="center"><a href="https://dashboard.heroku.com/new?template=https://github.com/DAXXTEAM/2FA"> <img src="https://img.shields.io/badge/Deploy%20On%20Heroku-green?style=for-the-badge&logo=heroku" width="520" height="138.45"/></a></p>
+<p align="center">
+  <a href="https://dashboard.heroku.com/new?template=https://github.com/DAXXTEAM/2FA">
+    <img src="https://img.shields.io/badge/Deploy%20On%20Heroku-purple?style=for-the-badge&logo=heroku" width="300"/>
+  </a>
+</p>
 
-#### **Step 2:** Set Environment Variables
-- `BOT_TOKEN` → Your Telegram Bot Token
-- `API_ID` → Your Telegram API ID
-- `API_HASH` → Your Telegram API Hash
-
-#### **Step 3:** Deploy & Start Bot
-- Click **Deploy** on Heroku
-- After deployment, go to **Resources** and enable the bot's worker dyno.
+**Steps:**
+1. Click the button above
+2. Set the environment variables:
+   - `API_ID` → Your Telegram API ID
+   - `API_HASH` → Your Telegram API Hash
+   - `BOT_TOKEN` → Your Telegram Bot Token
+3. Click **Deploy**
+4. Go to **Resources** and enable the worker dyno
 
 ---
 
 ### 2️⃣ Deploy on VPS
-#### **Step 1:** Install Dependencies
+
+#### Step 1: Install Dependencies
 ```bash
 sudo apt update && sudo apt install -y python3 python3-pip git
 ```
 
-#### **Step 2:** Clone the Repository
+#### Step 2: Clone the Repository
 ```bash
 git clone https://github.com/DAXXTEAM/2FA.git && cd 2FA
 ```
 
-#### **Step 3:** Install Python Requirements
+#### Step 3: Install Python Requirements
 ```bash
 pip3 install -r requirements.txt
 ```
 
-#### **Step 4:** Configure Environment Variables
-Edit `2FA.py` file or export manually:
+#### Step 4: Configure Environment Variables
 ```bash
-export BOT_TOKEN='your-bot-token'
 export API_ID='your-api-id'
 export API_HASH='your-api-hash'
+export BOT_TOKEN='your-bot-token'
 ```
 
-#### **Step 5:** Run the Bot
+#### Step 5: Run the Bot
 ```bash
 python3 2FA.py
 ```
 
 ---
 
+## 📖 Bot Commands
+
+| Command | Description |
+|---------|-------------|
+| `/start` | Start the bot |
+| `/help` | Show help guide |
+| `/keys` | List your saved keys |
+| `/add` | Add a new 2FA key |
+
+---
+
+## ⚙️ Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `API_ID` | Telegram API ID from [my.telegram.org](https://my.telegram.org) | ✅ |
+| `API_HASH` | Telegram API Hash from [my.telegram.org](https://my.telegram.org) | ✅ |
+| `BOT_TOKEN` | Bot token from [@BotFather](https://t.me/BotFather) | ✅ |
+
+---
+
+## ⚠️ Important Notes
+
+- **Keys are stored in memory** - They will be lost if the bot restarts
+- **Never share your 2FA secret keys** with anyone
+- For persistent storage, consider adding a database
+
+---
+
 ## 📜 License
+
 This project is open-source and available under the **MIT License**.
 
-## 📞 Contact & Support
-- GitHub: [DAXXTEAM](https://github.com/DAXXTEAM/2FA)
-- Telegram: [Support Group](https://t.me/vlubtech)
+## 📞 Support
 
-> **Note:** Ensure your bot is properly configured to avoid security risks.
-> 
+- GitHub: [DAXXTEAM](https://github.com/DAXXTEAM/2FA)
+- Telegram: [@vlubtech](https://t.me/vlubtech)
